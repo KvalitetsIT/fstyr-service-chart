@@ -1,0 +1,154 @@
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+replicaCount: 2
+revisionHistoryLimit: 5
+
+image:
+  repository: ""
+  pullPolicy: IfNotPresent
+  tag: ""
+
+serviceMonitor:
+  enabled: true
+prometheusRules:
+  enabled: false
+
+deployment:
+  containerPort: 8080
+
+  securityContext:
+    capabilitiesDropAll: true
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    runAsNonRoot: true
+    seccompProfile: RuntimeDefault
+    appArmorProfile: RuntimeDefault
+
+  resources: {}
+
+sidecar:
+  enabled: false
+  containerPort: 7070
+  securityContext:
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    runAsNonRoot: true
+    seccompProfile: RuntimeDefault
+    appArmorProfile: RuntimeDefault
+  resources: {}
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: "50%"
+
+netpol:
+  enabled: true
+  allowLetsEncrypt: true
+
+  # ingress:
+  #  name1:
+  #    namespace: namespaceName
+  #    podSelector:
+  #      label1: value1
+  #      label2: value2
+  #    ports:
+  #      80: TCP
+  #      443: UDP
+  #  name2:
+  #    podSelector:
+  #      label1: value1
+  #      label2: value2
+  #    ports:
+  #      80: TCP
+  #      443: UDP
+  #  name3:
+  #    namespace: namespaceName
+  #    ports:
+  #      80: TCP
+  #      443: UDP
+  # egress:
+  #   kubeApi: true
+  #   dns: true
+  #   name1:
+  #     namespace: namespaceName
+  #     podSelector:
+  #       label1: value1
+  #       label2: value2
+  #     ports:
+  #       80: TCP
+  #       443: UDP
+  #   name2:
+  #     namespace: namespaceName
+  #     ports:
+  #       80: TCP
+  #       443: UDP
+  #   name3:
+  #     fqdn: 
+  #       - "fstyr.dk"
+  #       - "demo.dk"
+  #     ports:
+  #       80: TCP
+  #       443: UDP
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+service:
+  enabled: true
+  type: ClusterIP
+  port: 8080
+  targetPort: container-port
+  annotations: {}
+
+ingress:
+  enabled: false
+  ingressClassName: nginx
+  annotations: {}
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths: []
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+
+nodeSelector: {}
+
+tolerations: []
+
+## @param operator.podAffinityPreset Pod affinity preset
+## Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#inter-pod-affinity-and-anti-affinity
+## Allowed values: soft, hard
+##
+podAffinityPreset: ""
+
+## @param operator.podAntiAffinityPreset Pod anti-affinity preset.
+## Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#inter-pod-affinity-and-anti-affinity
+## Allowed values: `soft` or `hard`
+##
+podAntiAffinityPreset: "soft"
+
+## Node affinity preset
+## Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity
+##
+nodeAffinityPreset:
+  ## @param operator.nodeAffinityPreset.type Node affinity preset type. Allowed values: `soft` or `hard`
+  ##
+  type: ""
+  ## @param operator.nodeAffinityPreset.key Set nodeAffinity preset key
+  ## E.g.
+  ## key: "kubernetes.io/e2e-az-name"
+  ##
+  key: ""
+  ## @param operator.nodeAffinityPreset.values Set nodeAffinity preset values
+  ## E.g.
+  ## values:
+  ##   - e2e-az1
+  ##   - e2e-az2
+  ##
+  values: []

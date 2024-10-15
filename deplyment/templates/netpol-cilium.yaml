@@ -1,0 +1,124 @@
+{{- if .Values.netpol.enabled }}
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: {{ include "service.fullname" . }}
+spec:
+  endpointSelector:
+    matchLabels:
+      {{- include "service.selectorLabels" . | nindent 6 }}
+  {{- if (.Values.netpol.ingress) }}
+  ingress:
+  {{- end }}
+  {{- range $key, $value := .Values.netpol.ingress }}
+  #  {{ $key }}
+  - fromEndpoints:
+      - matchLabels:
+          {{- if ($value.namespace) }}
+          io.kubernetes.pod.namespace: {{ $value.namespace }}
+          {{- end }}
+          {{- range $netpolKey, $netpolValue := $value.podSelector }}
+          {{$netpolKey}}: {{$netpolValue}}
+          {{- end }}
+    toPorts:
+      - ports:
+        {{- range $netpolKey, $netpolValue := $value.ports }}
+        - protocol: {{$netpolValue}}
+          port: {{$netpolKey}}
+        {{- end }}
+  {{- end }}
+  {{- if (.Values.netpol.egress) }}
+  egress:
+  {{- end }}
+  {{- range $key, $value := .Values.netpol.egress }}
+  #  {{ $key }}
+  {{- if eq $key "kubeApi" }}
+  {{- if $key}}
+    - toEntities:
+      - kube-apiserver
+  {{- end }}
+  {{- else if eq $key "dns" }}
+  {{- if $key}}
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+          rules:
+            dns:
+              - matchPattern: "*"
+  {{- end }}
+  {{- else }}
+  {{- if ($value.fqdn)}}
+    - toFQDNs: 
+        {{- range $v := $value.fqdn }}
+        - matchName: "{{ $v }}"
+        {{- end }}
+      toPorts:
+        - ports:
+          {{- range $netpolKey, $netpolValue := $value.ports }}
+          - protocol: {{$netpolValue}}
+            port: {{$netpolKey}}
+          {{- end }}
+  {{- else }}
+    - toEndpoints:
+      - matchLabels:
+        {{- if ($value.namespace) }}
+        io.kubernetes.pod.namespace: {{ $value.namespace }}
+        {{- end }}
+        {{- range $netpolKey, $netpolValue := $value.podSelector }}
+        {{$netpolKey}}: {{$netpolValue}}
+        {{- end }}
+      toPorts:
+        - ports:
+          {{- range $netpolKey, $netpolValue := $value.ports }}
+          - protocol: {{$netpolValue}}
+            port: {{$netpolKey}}
+          {{- end }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
+{{- end }}
+---
+{{- if .Values.netpol.allowLetsEncrypt }}
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: {{ include "service.fullname" . }}-lets-encrypt
+spec:
+  endpointSelector:
+    matchLabels:
+      acme.cert-manager.io/http01-solver: 'true'
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            app.kubernetes.io/instance: rke2-ingress-nginx
+      toPorts:
+        - ports:
+            - port: "8089"
+              protocol: TCP
+{{- end }}
+---
+{{- if .Values.ingress.enabled }}
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: {{ include "service.fullname" . }}-ingress
+spec:
+  endpointSelector:
+    matchLabels:
+      {{- include "service.selectorLabels" . | nindent 6 }}
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            app.kubernetes.io/instance: rke2-ingress-nginx
+      toPorts:
+        - ports:
+            - port: {{ .Values.service.port }}
+              protocol: TCP
+{{- end }}

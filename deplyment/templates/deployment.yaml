@@ -1,0 +1,338 @@
+apiVersion: apps/v1
+kind: "Deployment" 
+metadata:
+  name: {{ include "service.fullname" . }}
+  labels:
+    {{- include "service.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  {{- if (.Values.deploymentStrategy) }}
+  strategy:
+    type: {{ .Values.deploymentStrategy }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "service.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "service.selectorLabels" . | nindent 8 }}
+        {{- if .Values.podLabels }}
+        {{- toYaml .Values.podLabels | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if (.Values.deployment.priorityClassName) }}
+      priorityClassName: {{ .Values.deployment.priorityClassName }}
+      {{- end }}
+      automountServiceAccountToken: false
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if (.Values.deployment.hostAliases) }}
+      hostAliases:
+        {{- range $ip , $hostnames := .Values.deployment.hostAliases }}
+        - ip: {{ $ip }}
+          hostnames:
+          {{- range $hostnames }}
+            - {{ . }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+      containers:
+      {{- if .Values.sidecar.enabled }}
+        - name: {{ .Values.sidecar.name }}
+          image: "{{ .Values.sidecar.image.repository }}:{{ .Values.sidecar.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            capabilities:
+              drop:
+                - ALL
+              {{- if (.Values.sidecar.securityContextAddCapabilities) }}
+              add:
+                {{- toYaml .Values.sidecar.securityContextAddCapabilities | nindent 16 }}
+              {{- end }}
+            readOnlyRootFilesystem: {{ .Values.sidecar.securityContext.readOnlyRootFilesystem }}
+            allowPrivilegeEscalation: {{ .Values.sidecar.securityContext.allowPrivilegeEscalation }}
+            runAsNonRoot: {{ .Values.sidecar.securityContext.runAsNonRoot }}
+            appArmorProfile:
+              type: {{ .Values.sidecar.securityContext.appArmorProfile }}
+            seccompProfile:
+              type: {{ .Values.sidecar.securityContext.seccompProfile }}
+            {{- if (.Values.sidecar.securityContext.extra) }}
+            {{- toYaml .Values.sidecar.securityContext.extra | nindent 12 }}
+            {{- end }}
+          env: {{ if (not .Values.sidecar.env) }}[]{{ end }}
+
+            {{- range $key, $value := .Values.sidecar.env }}
+            - name: {{ $key }}
+            {{- if (not $value.type) }}
+              value: {{ $value.value | quote }}
+            {{- else if eq $value.type "fieldPath" }}
+              valueFrom:
+                fieldRef:
+                  fieldPath: {{ $value.value }}
+            {{- else if eq $value.type "secretKeyRef" }}
+              valueFrom:
+                secretKeyRef:
+                  key: {{ $value.key }}
+                  name: {{ $value.name }}
+            {{- end }}
+            {{- end }}
+          command: [
+            {{- range $index, $cmd := .Values.sidecar.commands }}
+            {{- if $index }},{{- end }}
+            {{ $cmd | quote }}
+            {{- end }}
+          ]
+          args: [
+            {{- range $index, $arg := .Values.sidecar.args }}
+            {{- if $index }},{{- end }}
+            {{ $arg | quote }}
+            {{- end }}
+          ]
+          {{- if (.Values.sidecar.resources) }}
+          resources:
+            {{- toYaml .Values.sidecar.resources | nindent 12 }}
+          {{- end }}
+          ports:
+            - containerPort: {{ .Values.sidecar.containerPort }}
+              name: sidecar-port
+          {{- if (.Values.sidecar.extraVolumeMounts) }}
+          volumeMounts:
+          {{- end }}
+          {{- range $key, $value := .Values.sidecar.extraVolumeMounts }}
+            - mountPath: {{ $value.mountPath }}
+              {{- /* # Remove "_<number>" at end of string */}}
+              {{ $underScoreSuffix := regexFind "_\\d+$" $key }}
+              {{ $newLength := int (sub (len $key) (len $underScoreSuffix)) }}
+              name: {{ substr 0 $newLength $key }}
+          {{- end }}
+          {{- if or (.Values.sidecar.configMapMountPaths) (.Values.sidecar.extraVolumeMounts) }}
+          volumeMounts:
+          {{- end }}
+          {{- range $key, $value := .Values.sidecar.extraVolumeMounts }}
+            - mountPath: {{ $value.mountPath }}
+              {{- /* # Remove "_<number>" at end of string */}}
+              {{ $underScoreSuffix := regexFind "_\\d+$" $key }}
+              {{ $newLength := int (sub (len $key) (len $underScoreSuffix)) }}
+              name: {{ substr 0 $newLength $key }}
+              {{- if ($value.subPath) }}
+              subPath: {{ $value.subPath }}
+              {{- end }}
+              {{- if ($value.readOnly) }}
+              readOnly: {{ $value.readOnly }}
+              {{- end }}
+          {{- end }}
+        {{- end }}
+        - name: {{ include "service.fullname" . }}
+          securityContext:
+            {{- if .Values.deployment.securityContext.capabilitiesDropAll }}
+            capabilities:
+              drop:
+                - ALL
+              {{- if (.Values.deployment.securityContextAddCapabilities) }}
+              add:
+                {{- toYaml .Values.deployment.securityContextAddCapabilities | nindent 16 }}
+              {{- end }}
+            {{- end }}
+            readOnlyRootFilesystem: {{ .Values.deployment.securityContext.readOnlyRootFilesystem }}
+            allowPrivilegeEscalation: {{ .Values.deployment.securityContext.allowPrivilegeEscalation }}
+            runAsNonRoot: {{ .Values.deployment.securityContext.runAsNonRoot }}
+            appArmorProfile:
+              type: {{ .Values.deployment.securityContext.appArmorProfile }}
+            seccompProfile:
+              type: {{ .Values.deployment.securityContext.seccompProfile }}
+            {{- if (.Values.deployment.securityContext.extra) }}
+            {{- toYaml .Values.deployment.securityContext.extra | nindent 12 }}
+            {{- end }}
+          image: "{{ .Values.image.repository }}{{- if .Values.image.digest }}@{{ .Values.image.digest }}{{- else }}:{{ .Values.image.tag | default .Chart.AppVersion }}{{- end }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env: {{ if (not .Values.deployment.env) }}[]{{ end }}
+
+          {{- range $key, $value := .Values.deployment.env }}
+          - name: {{ $key }}
+            {{- if (not $value.type) }}
+            value: {{ $value.value | quote }}
+            {{- else if eq $value.type "fieldPath" }}
+            valueFrom:
+              fieldRef:
+                fieldPath: {{ $value.value }}
+            {{- else if eq $value.type "secretKeyRef" }}
+            valueFrom:
+              secretKeyRef:
+                key: {{ $value.key }}
+                name: {{ $value.name }}
+            {{- else if eq $value.type "configMapKeyRef" }}
+            valueFrom:
+              configMapKeyRef:
+                key: {{ $value.key }}
+                name: {{ $value.name }}
+            {{- end }}
+          {{- end }}
+          {{- if (.Values.deployment.envFrom) }}
+          {{- if (.Values.deployment.envFrom.configMapRef)}}
+          envFrom:
+          {{- range .Values.deployment.envFrom.configMapRef}}
+          - configMapRef:
+              name: {{ . }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- if (.Values.deployment.commands) }}
+          command: [
+            {{- range $index, $cmd := .Values.deployment.commands }}
+            {{- if $index }},{{- end }}
+            {{ $cmd | quote }}
+            {{- end }}
+          ]
+          {{- end }}
+          {{- if (.Values.deployment.args ) }}
+          args: [
+            {{- range $index, $arg := .Values.deployment.args }}
+            {{- if $index }},{{- end }}
+            {{ $arg | quote }}
+            {{- end }}
+          ]
+          {{- end }}
+          ports:
+            - name: container-port
+              containerPort: {{ .Values.deployment.containerPort }}
+              {{- if (.Values.deployment.hostPort) }}
+              hostPort: {{ .Values.deployment.hostPort }}
+              {{- end }}
+            {{- range $name, $port := .Values.deployment.extraContainerPort }}
+            - name: {{ $name }}
+              containerPort: {{ $port }}
+            {{- end }}
+          volumeMounts:
+            - mountPath: /tmp
+              name: tmp
+          {{- range $key, $value := .Values.deployment.extraVolumeMounts }}
+            - mountPath: {{ $value.mountPath }}
+              {{- /* # Remove "_<number>" at end of string */}}
+              {{ $underScoreSuffix := regexFind "_\\d+$" $key }}
+              {{ $newLength := int (sub (len $key) (len $underScoreSuffix)) }}
+              name: {{ substr 0 $newLength $key }}
+              {{- if ($value.subPath) }}
+              subPath: {{ $value.subPath }}
+              {{- end }}
+              {{- if ($value.readOnly) }}
+              readOnly: {{ $value.readOnly }}
+              {{- end }}
+          {{- end }}
+
+          {{- if (.Values.deployment.livenessProbe) }}
+          livenessProbe:
+            {{- toYaml .Values.deployment.livenessProbe | nindent 12 }}
+          {{- end }}
+
+          {{- if (.Values.deployment.readinessProbe) }}
+          readinessProbe:
+            {{- toYaml .Values.deployment.readinessProbe | nindent 12 }}
+          {{- end }}
+
+          {{- if (.Values.deployment.startupProbe) }}
+          startupProbe:
+            {{- toYaml .Values.deployment.startupProbe | nindent 12 }}
+          {{- end }}
+
+          resources:
+            {{- toYaml .Values.deployment.resources | nindent 12 }}
+
+      {{- if (.Values.initContainers) }}
+      initContainers:
+      {{- end }}
+      {{- range $key, $value := .Values.initContainers }}
+        - name: {{ $key }}
+          image: "{{ $value.image.repository }}:{{ $value.image.tag }}"
+          env: {{ if (not $value.env) }}[ ]{{ end }}
+            {{- range $key, $value := $value.env }}
+            - name: {{ $key }}
+            {{- if (not $value.type) }}
+              value: {{ $value.value | quote }}
+            {{- else if eq $value.type "fieldPath" }}
+              valueFrom:
+                fieldRef:
+                fieldPath: {{ $value.value }}
+            {{- else if eq $value.type "secretKeyRef" }}
+              valueFrom:
+                secretKeyRef:
+                  key: {{ $value.key }}
+                  name: {{ $value.name }}
+            {{- end }}
+            {{- end }}
+          command: [
+            {{- range $index, $cmd := $value.commands }}
+            {{- if $index }},{{- end }}
+            {{ $cmd | quote }}
+            {{- end }}
+          ]
+          args: [
+            {{- range $index, $arg := $value.args }}
+            {{- if $index }},{{- end }}
+            {{ $arg | quote }}
+            {{- end }}
+          ]
+          securityContext:
+            readOnlyRootFilesystem: {{ ($value.securityContext).readOnlyRootFilesystem  | default "true" }}
+            allowPrivilegeEscalation: {{ ($value.securityContext).allowPrivilegeEscalation | default "false" }}
+            runAsNonRoot: {{ ($value.securityContext).runAsNonRoot | default "true"}}
+            appArmorProfile:
+              type: {{ ($value.securityContext).seccompProfile | default "RuntimeDefault" }}
+            seccompProfile:
+              type: {{ ($value.securityContext).seccompProfile | default "RuntimeDefault" }}
+            {{- if (($value.securityContext).extra) }}
+            {{- toYaml $value.securityContext.extra | nindent 12 }}
+            {{- end }}
+          {{- if ($value.resources)}}
+          resources:
+            {{- toYaml $value.resources | nindent 12 }}
+          {{- end }}
+          {{- if or ($value.configMapMountPaths) ($value.extraVolumeMounts) }}
+          volumeMounts:
+          {{- end }}
+          {{- range $key, $value := $value.extraVolumeMounts }}
+            - mountPath: {{ $value.mountPath }}
+              {{- /* # Remove "_<number>" at end of string */}}
+              {{ $underScoreSuffix := regexFind "_\\d+$" $key }}
+              {{ $newLength := int (sub (len $key) (len $underScoreSuffix)) }}
+              name: {{ substr 0 $newLength $key }}
+              {{- if ($value.subPath) }}
+              subPath: {{ $value.subPath }}
+              {{- end }}
+          {{- end }}
+      {{- end }}
+
+      volumes:
+        - emptyDir: {}
+          name: tmp
+          sizeLimit: 500Mi
+        {{- range $key, $value := .Values.deployment.extraVolumes }}
+        - name: {{$key}}
+          {{- tpl . $ | nindent 10 -}}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.affinity }}
+      affinity:
+        {{- toYaml .Values.affinity | nindent 8 }}
+      {{- else }}
+      affinity:
+        podAffinity: {{- include "common.affinities.pods" (dict "type" .Values.podAffinityPreset "component" "master" "context" $) | nindent 10 }}
+        podAntiAffinity: {{- include "common.affinities.pods" (dict "type" .Values.podAntiAffinityPreset "component" "master" "context" $) | nindent 10 }}
+        nodeAffinity: {{- include "common.affinities.nodes" (dict "type" .Values.nodeAffinityPreset.type "key" .Values.nodeAffinityPreset.key "values" .Values.nodeAffinityPreset.values) | nindent 10 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

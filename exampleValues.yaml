@@ -1,0 +1,35 @@
+imagePullSecrets:
+  - name: demo-secret
+
+image:
+  repository: kvalitetsit/busykit
+  tag: "1.1.0"
+
+deployment:
+  containerPort: 8080
+  readinessProbe:
+    httpGet:
+      path: /actuator/health
+      port: 8081
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    successThreshold: 1
+    timeoutSeconds: 1
+    failureThreshold: 10
+  env: 
+    HEALTHCHECK_RATE:
+      value: PT5M
+
+ingress:
+  enabled: true
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/whitelist-source-range: 10.10.60.0/24
+  hosts:
+    - host: demo.fstyr.dk
+      paths:
+        - path: /
+  tls:
+    - hosts:
+        - demo.fstyr.dk
+      secretName: demo.fstyr.dk

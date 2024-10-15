@@ -1,0 +1,9 @@
+apiVersion: v2
+name: deployment
+description: A Helm chart for deploying services
+home: https://github.com/KvalitetsIT/helm-deployment-chart
+
+type: application
+
+version: 0.1.3
+appVersion: 1.0.2
