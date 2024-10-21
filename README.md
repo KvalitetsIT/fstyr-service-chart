@@ -12,7 +12,7 @@ Create values.yaml file with the parameters specified
 
 Run Helm command:  
 ```console
-$ helm install web-service fstyr/fstry-service-chart -f myValues.yaml 
+$ helm install web-service fstyr/fstyr-service-chart -f myValues.yaml 
 ```
 ## Configuration
 The following table, lists the configurable parameters.

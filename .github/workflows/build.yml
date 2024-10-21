@@ -36,7 +36,7 @@ jobs:
 
 
       - name: Build and test helm chart
-        run: ./build/build-helm.sh deployment ${{ steps.tag.outputs.VERSION }} ${{ steps.trunk.outputs.VERSION }}
+        run: ./build/build-helm.sh fstyr-service-chart ${{ steps.tag.outputs.VERSION }} ${{ steps.trunk.outputs.VERSION }}
 
       - name: Push tagged helm chart to repo
         if: ${{ steps.tag.conclusion != 'skipped' }}
