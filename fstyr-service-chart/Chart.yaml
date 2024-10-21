@@ -1,7 +1,7 @@
 apiVersion: v2
-name: deployment
+name: fstyr-service-chart
 description: A Helm chart for deploying services
-home: https://github.com/KvalitetsIT/helm-deployment-chart
+home: https://github.com/KvalitetsIT/fstyr-service-chart
 
 type: application
 
