@@ -1,10 +1,10 @@
-# Deployment Helm Chart
+# Fstyr service Helm Chart
 Deploys a generic container
 
 ## Installing
-First add KvalitetsIT Helm repo to Helm
+First add FSTYR Helm repo to Helm
 ```console
-$ helm repo add KvalitetsIT https://raw.githubusercontent.com/KvalitetsIT/helm-repo/master/
+$ helm repo add fstyr ???
 $ helm repo update
 ```
 
@@ -12,7 +12,7 @@ Create values.yaml file with the parameters specified
 
 Run Helm command:  
 ```console
-$ helm install web-service KvalitetsIT/deploy -f myValues.yaml 
+$ helm install web-service fstyr/fstry-service-chart -f myValues.yaml 
 ```
 ## Configuration
 The following table, lists the configurable parameters.
@@ -62,12 +62,22 @@ Parameter | Description                                                         
 &nbsp; |
 **[PodDisruptionBudget](#PodDisruptionBudget)** |
 `podDisruptionBudget.minAvailable` | Which is a description of the number of pods from that set that must still be available after the eviction, even in the absence of the evicted pod. minAvailable can be either an absolute number or a percentage.                                                                                                                                                                                                                                                                                     
-`podDisruptionBudget.maxUnavailable` | Which is a description of the number of pods from that set that can be unavailable after the eviction. It can be either an absolute number or a percentage.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
+`podDisruptionBudget.maxUnavailable` | Which is a description of the number of pods from that set that can be unavailable after the eviction. It can be either an absolute number or a percentage.                                                                                                                                                                                      &nbsp; |
+**[NetworkPolicy](#PodDisruptionBudget)** |
+`netpol.ingress.{name}.namespace` | Namespace traffic is orginating from, if outsite one namespace
+`netpol.ingress.{name}.podSelector` | Pod labes to match on orgination pod
+`netpol.ingress.{name}.ports` | Port to allow ingres on matcing namspace and/or podSelector | `80: TCP`                                                                                                 
+`netpol.egress.dns` | Allow pod to connect to cluster DNS server | `true`          
+`netpol.egress.useKafka` | Allow pod to connect to kafka | `true`                                                                                          
+`netpol.egress.usePostgres.inNamespace` | Allow pod to connect to postgres in namespace is as value | `example-postgres`
+`netpol.egress.{name}.namespace` | Namespace of the revicing pod, if not in own namespace
+`netpol.egress.{name}.podSelector` | Pod labes to match on the revicing pod
+`netpol.egress.{name}.ports` | Port to allow egress on matcing namspace and/or podSelector
+`netpol.egress.{name}.fqdn` | List of FQDN to connect to outsite the cluster. Can only be usted under the same {name} with ports | `- "fstyr.dk"`
 &nbsp; |
 **[Ingress](#adding-ingress)** |
-`ingress.enabled` | Set to false to disable ingress                                                                                                                                                                                                                                                                | `false`
-`ingress.annotations` | Annotations for ingress                                                                                                                                                                                                                                                                        | `kubernetes.io/ingress.class: nginx`
-`ingress.hosts` | Hosts served by the ingress                                                                                                                                                                                                                                                                    | `- host: domain.dk`
+`ingress.enabled` | Set to true to enable ingress. This also add a network policy thats allow traffik from the ingress-nginx                                                                                                                                                                                                                                                                | `true`
+`ingress.annotations` | Annotations for ingress                                                                                                                                                                                                                                                                        |  | Hosts served by the ingress                                                                                                                                                                                                                                                                    | `- host: domain.dk`
 `ingress.tls` | TLS config                                                                                                                                                                                                                                                                                     
 `extraIngress` | Map of extra ingress                                                                                                                                                                                                                                                                           
 `extraIngress.{name}` | Place ingress values under the name value                                                                                                                                                                                                                                                      

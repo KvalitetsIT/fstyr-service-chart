@@ -20,8 +20,16 @@ deployment:
     HEALTHCHECK_RATE:
       value: PT5M
 
+netpol:
+  egress:
+    dns: true
+    useKafka: true
+    usePostgres:
+      inNamespace: ddp-security-postgres
+
 ingress:
   enabled: true
+  enabled: false
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
     nginx.ingress.kubernetes.io/whitelist-source-range: 10.10.60.0/24

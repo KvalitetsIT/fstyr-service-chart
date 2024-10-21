@@ -70,6 +70,9 @@ netpol:
   # egress:
   #   kubeApi: true
   #   dns: true
+  #   useKafka: true
+  #   usePostgres:
+  #     inNamespace: ddp-security-postgres
   #   name1:
   #     namespace: namespaceName
   #     podSelector:

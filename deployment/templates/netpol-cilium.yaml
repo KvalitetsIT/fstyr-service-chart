@@ -51,6 +51,25 @@ spec:
             dns:
               - matchPattern: "*"
   {{- end }}
+  {{- else if eq $key "useKafka" }}
+  {{- if $key}}
+    - toEndpoints:
+      - matchLabels:
+          io.kubernetes.pod.namespace: kafka-services
+          strimzi.io/cluster: kafka
+      toPorts:
+        - ports:
+          - protocol: TCP
+            port: 9093
+  {{- end }}
+  {{- else if eq $key "usePostgres" }}
+    - toEndpoints:
+      - matchLabels:
+          io.kubernetes.pod.namespace: {{ $value.inNamespace }}
+      toPorts:
+        - ports:
+          - protocol: TCP
+            port: 5432
   {{- else }}
   {{- if ($value.fqdn)}}
     - toFQDNs: 
@@ -83,7 +102,7 @@ spec:
   {{- end }}
 {{- end }}
 ---
-{{- if .Values.netpol.allowLetsEncrypt }}
+{{- if and .Values.netpol.allowLetsEncrypt .Values.ingress.enabled }}
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
