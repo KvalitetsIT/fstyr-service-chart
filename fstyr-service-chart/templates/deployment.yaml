@@ -276,6 +276,11 @@ spec:
               valueFrom:
                 secretKeyRef:
                   key: {{ $value.key }}
+                  name: {{ $value.name }}            
+            {{- else if eq $value.type "configMapKeyRef" }}
+              valueFrom:
+                configMapKeyRef:
+                  key: {{ $value.key }}
                   name: {{ $value.name }}
             {{- end }}
             {{- end }}
