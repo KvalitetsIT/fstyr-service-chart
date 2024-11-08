@@ -24,7 +24,7 @@ spec:
       - ports:
         {{- range $netpolKey, $netpolValue := $value.ports }}
         - protocol: {{$netpolValue}}
-          port: {{$netpolKey}}
+          port: {{$netpolKey | quote }}
         {{- end }}
   {{- end }}
   {{- if (.Values.netpol.egress) }}
@@ -60,7 +60,7 @@ spec:
       toPorts:
         - ports:
           - protocol: TCP
-            port: 9093
+            port: "9093"
   {{- end }}
   {{- else if eq $key "usePostgres" }}
     - toEndpoints:
@@ -69,7 +69,7 @@ spec:
       toPorts:
         - ports:
           - protocol: TCP
-            port: 5432
+            port: "5432"
   {{- else }}
   {{- if ($value.fqdn)}}
     - toFQDNs: 
@@ -80,7 +80,7 @@ spec:
         - ports:
           {{- range $netpolKey, $netpolValue := $value.ports }}
           - protocol: {{$netpolValue}}
-            port: {{$netpolKey}}
+            port: {{$netpolKey | quote }}
           {{- end }}
   {{- else }}
     - toEndpoints:
@@ -95,7 +95,7 @@ spec:
         - ports:
           {{- range $netpolKey, $netpolValue := $value.ports }}
           - protocol: {{$netpolValue}}
-            port: {{$netpolKey}}
+            port: {{$netpolKey | quote }}
           {{- end }}
   {{- end }}
   {{- end }}
@@ -138,6 +138,6 @@ spec:
             app.kubernetes.io/instance: rke2-ingress-nginx
       toPorts:
         - ports:
-            - port: {{ .Values.service.port }}
+            - port: {{ .Values.service.port  | quote }}
               protocol: TCP
 {{- end }}
