@@ -96,18 +96,22 @@ spec:
                   name: {{ $value.name }}
             {{- end }}
             {{- end }}
+          {{- if (.Values.sidecar.commands ) }}
           command: [
             {{- range $index, $cmd := .Values.sidecar.commands }}
             {{- if $index }},{{- end }}
             {{ $cmd | quote }}
             {{- end }}
           ]
+          {{- end }}
+          {{- if (.Values.sidecar.args) }}
           args: [
             {{- range $index, $arg := .Values.sidecar.args }}
             {{- if $index }},{{- end }}
             {{ $arg | quote }}
             {{- end }}
           ]
+          {{- end }}
           {{- if (.Values.sidecar.resources) }}
           resources:
             {{- toYaml .Values.sidecar.resources | nindent 12 }}
@@ -284,18 +288,22 @@ spec:
                   name: {{ $value.name }}
             {{- end }}
             {{- end }}
+          {{- if ($value.commands) }}
           command: [
             {{- range $index, $cmd := $value.commands }}
             {{- if $index }},{{- end }}
             {{ $cmd | quote }}
             {{- end }}
           ]
+          {{- end }}
+          {{- if ($value.args) }}
           args: [
             {{- range $index, $arg := $value.args }}
             {{- if $index }},{{- end }}
             {{ $arg | quote }}
             {{- end }}
           ]
+          {{- end }}
           securityContext:
             readOnlyRootFilesystem: {{ ($value.securityContext).readOnlyRootFilesystem  | default "true" }}
             allowPrivilegeEscalation: {{ ($value.securityContext).allowPrivilegeEscalation | default "false" }}
@@ -327,9 +335,9 @@ spec:
       {{- end }}
 
       volumes:
-        - emptyDir: {}
-          name: tmp
-          sizeLimit: 500Mi
+        - name: tmp
+          emptyDir: 
+            sizeLimit: 500Mi
         {{- range $key, $value := .Values.deployment.extraVolumes }}
         - name: {{$key}}
           {{- tpl . $ | nindent 10 -}}
