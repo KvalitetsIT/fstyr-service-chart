@@ -141,3 +141,23 @@ spec:
             - port: {{ .Values.service.port  | quote }}
               protocol: TCP
 {{- end }}
+---
+{{- if .Values.serviceMonitor.enabled }}
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: {{ include "service.fullname" . }}-servicemonitor
+spec:
+  endpointSelector:
+    matchLabels:
+      {{- include "service.selectorLabels" . | nindent 6 }}
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: infrastructure
+            app.kubernetes.io/name: prometheus
+      toPorts:
+        - ports:
+            - port: {{ .Values.serviceMonitor.targetPort | default .Values.deployment.containerPort }}
+              protocol: TCP
+{{- end }}
