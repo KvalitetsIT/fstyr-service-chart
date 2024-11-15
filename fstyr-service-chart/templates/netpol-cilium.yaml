@@ -158,6 +158,6 @@ spec:
             app.kubernetes.io/name: prometheus
       toPorts:
         - ports:
-            - port: {{ .Values.serviceMonitor.targetPort | default .Values.deployment.containerPort }}
+            - port: {{ .Values.serviceMonitor.targetPort | default .Values.deployment.containerPort | quote }}
               protocol: TCP
 {{- end }}
