@@ -31,8 +31,10 @@ spec:
         ddp.fstyr.dk/data-streaming: kafka
         {{- end }}
         {{- end }}
+        {{- if (.Values.netpol.egress.usePostgres) }}
         {{- if (.Values.netpol.egress.usePostgres.inNamespace) }}
         ddp.fstyr.dk/data-storage: postgresql
+        {{- end }}
         {{- end }}
         {{- end }}
     spec:
