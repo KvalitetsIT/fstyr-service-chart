@@ -380,11 +380,17 @@ Parameter | Description                                                         
 `serviceMonitor.path` | Path for metric endpoint. Default `/metrics`                                                                                                                                                                                                                                                   |
 `serviceMonitor.targetPort` | Port for metric endpoint. Default `deployment.containerPort`                                                                                                                                                                                                                                   |
 `serviceMonitor.interval` | Scrape interval. Defalt non, using promethues default                                                                                                                                                                                                                                          |
+`serviceMonitor.metricRelabelings` | Add extra metricRelabelings https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/running-exporters.md#relabeling-and-metric-relabeling.                                                                                                                                                                                                                                      |
 
 ```yaml
 serviceMonitor:
   enabled: true
   release: prometheus
+  metricRelabelings:
+    - sourceLabels:
+      - __meta_kubernetes_pod_label_team
+      regex: "prometheus"
+      action: keep
 ```
 
 ## Set PrometheusRule
