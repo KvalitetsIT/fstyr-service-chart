@@ -13,6 +13,9 @@ spec:
           sourceLabels:
             - service
           targetLabel: instance
+        {{- if (.Values.serviceMonitor.metricRelabelings) }}
+        {{- toYaml .Values.serviceMonitor.metricRelabelings | nindent 8 }}
+        {{- end }}
       path: {{ .Values.serviceMonitor.path | default "/metrics" }}
       scheme: http
       targetPort: {{ .Values.serviceMonitor.targetPort | default .Values.deployment.containerPort }}
