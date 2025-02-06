@@ -85,12 +85,12 @@ spec:
   {{- else }}
     - toEndpoints:
       - matchLabels:
-        {{- if ($value.namespace) }}
-        io.kubernetes.pod.namespace: {{ $value.namespace }}
-        {{- end }}
-        {{- range $netpolKey, $netpolValue := $value.podSelector }}
-        {{$netpolKey}}: {{$netpolValue}}
-        {{- end }}
+          {{- if ($value.namespace) }}
+          io.kubernetes.pod.namespace: {{ $value.namespace }}
+          {{- end }}
+          {{- range $netpolKey, $netpolValue := $value.podSelector }}
+          {{$netpolKey}}: {{$netpolValue}}
+          {{- end }}
       toPorts:
         - ports:
           {{- range $netpolKey, $netpolValue := $value.ports }}
