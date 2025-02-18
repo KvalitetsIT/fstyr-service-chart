@@ -37,6 +37,9 @@ spec:
         {{- end }}
         {{- end }}
         {{- end }}
+        {{- if .Values.ingress.enabled -}}
+        ddp.fstyr.dk/ingress-traffik: public
+        {{- end }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
